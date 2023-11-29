@@ -12,7 +12,7 @@ func TestTransferTx(t *testing.T) {
 	account1 := createRandomAccount(t)
 	account2 := createRandomAccount(t)
 
-	//run n concurent transfer transactions
+	// run a concurrent transfer transaction
 	n := 5
 	amount := int64(10)
 
@@ -26,12 +26,12 @@ func TestTransferTx(t *testing.T) {
 				ToAccountID:   account2.ID,
 				Amount:        amount,
 			})
+
 			errs <- err
 			results <- result
 		}()
 	}
-
-	// Check result
+	// check results
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestTransferTx(t *testing.T) {
 		result := <-results
 		require.NotEmpty(t, result)
 
-		//check transfer
+		// check transfer
 		transfer := result.Transfer
 		require.NotEmpty(t, transfer)
 		require.Equal(t, account1.ID, transfer.FromAccountID)
@@ -51,11 +51,11 @@ func TestTransferTx(t *testing.T) {
 		_, err = store.GetTransfer(context.Background(), transfer.ID)
 		require.NoError(t, err)
 
-		//check entries
+		// check entries
 		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, account1.ID, fromEntry.AccountID)
-		require.Equal(t, -amount, fromEntry)
+		require.Equal(t, -amount, fromEntry.Amount)
 		require.NotZero(t, fromEntry.ID)
 		require.NotZero(t, fromEntry.CreatedAt)
 
@@ -65,12 +65,11 @@ func TestTransferTx(t *testing.T) {
 		toEntry := result.ToEntry
 		require.NotEmpty(t, toEntry)
 		require.Equal(t, account2.ID, toEntry.AccountID)
-		require.Equal(t, amount, toEntry)
+		require.Equal(t, amount, toEntry.Amount)
 		require.NotZero(t, toEntry.ID)
 		require.NotZero(t, toEntry.CreatedAt)
 
-		_, err = store.GetEntry(context.Background(), toEntry.ID)
+		_, err = store.GetTransfer(context.Background(), transfer.ID)
 		require.NoError(t, err)
-
 	}
 }
